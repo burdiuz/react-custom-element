@@ -7,7 +7,6 @@ export const useContainerDispatch = (eventName: string) => {
   return useCallback(
     (detail: unknown) => {
       const event = new CustomEvent(eventName, { detail });
-      console.log("DISPATCH:", container, event);
       container.dispatchEvent(event);
     },
     [container, eventName]
