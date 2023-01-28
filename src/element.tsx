@@ -1,14 +1,30 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { CallbackNames, CustomElementProvider } from "./context";
+import { ComponentType, ReactNode, StrictMode } from "react";
+import { createRoot, Root } from "react-dom/client";
+import {
+  AttributeCallback,
+  CallbackMap,
+  CallbackNames,
+  CustomElementProvider,
+  LifecycleAttributeChangedCallback,
+  LifecycleCallback,
+  ProviderInitCallback,
+  ProviderInitCallbackParams,
+} from "./context";
 
-export const createRenderFn = (RootComponent) => () => <RootComponent />;
+type RendererParams = {
+  container: HTMLElement;
+  onMount?: ProviderInitCallback;
+  onUnmount?: ProviderInitCallback;
+};
+
+export const createRenderFn = (RootComponent: ComponentType) => () =>
+  <RootComponent />;
 
 export const defaultRenderer = (
-  renderFn,
-  { container, onMount, onUnmount }
+  renderFn: () => ReactNode,
+  { container, onMount, onUnmount }: RendererParams
 ) => {
-  const reactRoot = createRoot(container.shadowRoot);
+  const reactRoot = createRoot(container.shadowRoot || container);
   reactRoot.render(
     <StrictMode>
       <CustomElementProvider
@@ -26,8 +42,28 @@ export const defaultRenderer = (
   return reactRoot;
 };
 
-const callByName = (map, name, args) =>
+function callByName<T extends Function, K extends Array<unknown>>(
+  map: CallbackMap<T>,
+  name: string,
+  args: K
+) {
   map?.get(name)?.forEach((callback) => callback(...args));
+}
+
+export type CreateCustomElementClassParams = {
+  render: () => ReactNode;
+  renderer?: (render: () => ReactNode, params: RendererParams) => Root;
+  shadowDomMode?: ShadowRootMode;
+  attributes?: string[];
+  baseClass?: typeof HTMLElement;
+  onCreated?: (element: HTMLElement) => void;
+  onConnected?: (element: HTMLElement) => void;
+  onDisconnected?: (element: HTMLElement) => void;
+  onAdopted?: (element: HTMLElement) => void;
+  onAttributeChanged?: LifecycleAttributeChangedCallback;
+  onMount?: ProviderInitCallback;
+  onUnmount?: ProviderInitCallback;
+};
 
 export const createCustomElementClass = ({
   render,
@@ -42,26 +78,29 @@ export const createCustomElementClass = ({
   onAttributeChanged,
   onMount,
   onUnmount,
-}) =>
+}: CreateCustomElementClassParams) =>
   class CustomElement extends BaseClass {
     static get observedAttributes() {
       return attributes;
     }
 
+    private reactRoot: Root;
+    private lifecycleCallbacks: CallbackMap<LifecycleCallback> = new Map();
+    private attributeCallbacks: CallbackMap<AttributeCallback> = new Map();
+
     constructor() {
       super();
-      this.initialized = false;
       this.attachShadow({ mode: shadowDomMode });
 
       this.reactRoot = renderer(render, {
         container: this,
-        onMount: (params) => {
+        onMount: (params: ProviderInitCallbackParams) => {
           // Object.assign(this, params);
 
           this.lifecycleCallbacks = params.lifecycleCallbacks;
           this.attributeCallbacks = params.attributeCallbacks;
 
-          onMount && onMount(params);
+          onMount?.(params);
         },
         onUnmount,
       });
@@ -94,9 +133,14 @@ export const createCustomElementClass = ({
       callByName(this.lifecycleCallbacks, CallbackNames.ADOPTED, [this]);
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
+    attributeChangedCallback(
+      name: string,
+      oldValue: string | undefined,
+      newValue: string | undefined
+    ) {
       onAttributeChanged?.(this, name, oldValue, newValue);
       callByName(this.lifecycleCallbacks, CallbackNames.ATTRIBUTE_CHANGED, [
+        this,
         name,
         oldValue,
         newValue,
