@@ -6,6 +6,8 @@ import React, {
   forwardRef,
   Ref,
   JSXElementConstructor,
+  HTMLAttributes,
+  AllHTMLAttributes,
 } from "react";
 
 const isEventName = (name: string) => /^on[A-Z]/.test(name);
@@ -45,7 +47,9 @@ const CustomElementShimInner = (
   {
     name: ChildComponent,
     ...shimProps
-  }: { name: string | JSXElementConstructor<any> } & Record<string, unknown>,
+  }: {
+    name: string | JSXElementConstructor<any>;
+  } & (AllHTMLAttributes<HTMLElement> | Record<string, unknown>),
   outputRef: Ref<HTMLElement | null>
 ) => {
   const events = useRef<ListenersHashMap>({});

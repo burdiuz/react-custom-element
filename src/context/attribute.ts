@@ -7,7 +7,7 @@ import { AttributeCallback, useCustomElement } from "./context";
 const useContainerAttributeFn = (
   attributeName: string,
   callback: AttributeCallback
-) => {
+): [() => string | null, (value: string | null) => void] => {
   const { container, addAttributeCallback, removeAttributeCallback } =
     useCustomElement();
 
@@ -29,7 +29,14 @@ const useContainerAttributeFn = (
   );
 
   const update = useCallback(
-    (value: unknown) => container.setAttribute(attributeName, String(value)),
+    (value: string | null) => {
+      if (value === null) {
+        container.removeAttribute(attributeName);
+        return;
+      }
+
+      container.setAttribute(attributeName, value);
+    },
     [container, attributeName]
   );
 
