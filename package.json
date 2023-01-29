@@ -1,5 +1,5 @@
 {
-  "name": "@actualwave/react-custom-component",
+  "name": "@actualwave/react-custom-element",
   "description": "An approach to microfrontends via custom elements and module isolation",
   "version": "0.0.1",
   "license": "MIT",

@@ -1,4 +1,4 @@
-# @actualwave/react-custom-component
+# @actualwave/react-custom-element
 
 Adds support for independent modules wrapped in [HTML Custom Elements](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements). It provides a set of react hooks to establish communication through custom element container, so it is possible to pass data IN via custom element attributes and IN/OUT via events.
 
@@ -6,17 +6,17 @@ Adds support for independent modules wrapped in [HTML Custom Elements](https://d
 
 ## Installation
 
-This package can be installed via its name `@actualwave/react-custom-component`.
+This package can be installed via its name `@actualwave/react-custom-element`.
 Using NPM
 
 ```
-npm install @actualwave/react-custom-component
+npm install @actualwave/react-custom-element
 ```
 
 Or Yarn
 
 ```
-yarn add @actualwave/react-custom-component
+yarn add @actualwave/react-custom-element
 ```
 
 ## Integration
@@ -66,7 +66,7 @@ createCustomElement({
 });
 ```
 
-Then you have to import this component and use `<my-component>` HTML element.
+Then you have to import(or load in any other way) this component and use `<my-component>` HTML element.
 
 ```jsx
 import { useEffect, useRef } from "react";
@@ -150,12 +150,13 @@ const MyComponent = () => {
 
   const [readValue] = useContainerAttribute(
     "data-value",
-    (name, oldValue, newValue) => setValue(newValue)
+    (name, oldValue, newValue) => setValue(newValue),
+    []
   );
 
   useEffect(() => {
     setValue(readValue());
-  }, [setValue, readValue]);
+  }, [readValue]);
 
   return (
     <div>
