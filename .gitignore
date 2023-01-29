@@ -1,3 +1,8 @@
+# Build artefacts
+es/
+cjs/
+index.d.ts
+
 # Logs
 logs
 *.log

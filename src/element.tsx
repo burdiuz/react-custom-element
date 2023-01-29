@@ -1,4 +1,4 @@
-import { ComponentType, ReactNode, StrictMode } from "react";
+import React, { ComponentType, ReactNode, StrictMode } from "react";
 import { createRoot, Root } from "react-dom/client";
 import {
   AttributeCallback,
@@ -78,15 +78,15 @@ export const createCustomElementClass = ({
   onAttributeChanged,
   onMount,
   onUnmount,
-}: CreateCustomElementClassParams) =>
+}: CreateCustomElementClassParams): typeof HTMLElement =>
   class CustomElement extends BaseClass {
     static get observedAttributes() {
       return attributes;
     }
 
-    private reactRoot: Root;
-    private lifecycleCallbacks: CallbackMap<LifecycleCallback> = new Map();
-    private attributeCallbacks: CallbackMap<AttributeCallback> = new Map();
+    public reactRoot: Root;
+    public lifecycleCallbacks: CallbackMap<LifecycleCallback> = new Map();
+    public attributeCallbacks: CallbackMap<AttributeCallback> = new Map();
 
     constructor() {
       super();

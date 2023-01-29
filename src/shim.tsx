@@ -6,7 +6,6 @@ import React, {
   forwardRef,
   Ref,
   JSXElementConstructor,
-  HTMLAttributes,
   AllHTMLAttributes,
 } from "react";
 

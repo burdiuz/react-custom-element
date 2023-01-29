@@ -1,0 +1,50 @@
+{
+  "name": "@actualwave/react-custom-component",
+  "description": "An approach to microfrontends via custom elements and module isolation",
+  "version": "0.0.1",
+  "license": "MIT",
+  "types": "./index.d.ts",
+  "main": "./cjs/index.js",
+  "module": "./es/index.js",
+  "type": "commonjs",
+  "exports": {
+    "types": "./index.d.ts",
+    "import": "./es/index.js",
+    "default": "./cjs/index.js"
+  },
+  "files": [
+    "es",
+    "cjs",
+    "!es/types",
+    "!cjs/types",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "react",
+    "custom",
+    "element",
+    "microfrontend"
+  ],
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^24.0.1",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rollup": "^3.12.0",
+    "rollup-plugin-dts": "^5.1.1",
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.4"
+  }
+}
