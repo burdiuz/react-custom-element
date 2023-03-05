@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { Method, MethodImpl } from "./methods";
 
 export type CallbackMap<T = () => void> = Map<string, Set<T>>;
 export type CallbackAddFn<T = () => void> = (name: string, callback: T) => void;
@@ -33,6 +34,9 @@ export type ProviderValue = {
   attributeCallbacks: CallbackMap<AttributeCallback>;
   addAttributeCallback: CallbackAddFn<AttributeCallback>;
   removeAttributeCallback: CallbackRemoveFn<AttributeCallback>;
+  getContainerCustomMethod: (name: string) => Method | undefined;
+  hasContainerCustomMethod: (name: string) => boolean;
+  setContainerCustomMethod: (name: string, impl: MethodImpl) => Method;
 };
 
 export const CustomElementContext = createContext<ProviderValue | undefined>(

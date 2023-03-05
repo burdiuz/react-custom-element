@@ -84,14 +84,17 @@ export const createCustomElementClass = ({
       return attributes;
     }
 
-    public reactRoot: Root;
+    public reactRoot?: Root;
     public lifecycleCallbacks: CallbackMap<LifecycleCallback> = new Map();
     public attributeCallbacks: CallbackMap<AttributeCallback> = new Map();
 
     constructor() {
       super();
       this.attachShadow({ mode: shadowDomMode });
+      onCreated?.(this);
+    }
 
+    connectedCallback() {
       this.reactRoot = renderer(render, {
         container: this,
         onMount: (params: ProviderInitCallbackParams) => {
@@ -104,22 +107,6 @@ export const createCustomElementClass = ({
         },
         onUnmount,
       });
-
-      onCreated?.(this);
-    }
-
-    connectedCallback() {
-      /*
-      if(!this.initialized) {
-        this.initialized = true;
-
-        render({
-          container: this,
-          onReactMount,
-          onReactUnmount,
-        });
-      }
-      */
 
       onConnected?.(this);
       callByName(this.lifecycleCallbacks, CallbackNames.CONNECTED, [this]);

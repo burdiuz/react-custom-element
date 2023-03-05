@@ -3,3 +3,4 @@ export * from "./context";
 export * from "./event";
 export * from "./lifecycle";
 export * from "./provider";
+export { useSetContainerCustomMethod } from "./methods";

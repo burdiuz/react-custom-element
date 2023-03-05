@@ -2,6 +2,11 @@
 
 Adds support for independent modules wrapped in [HTML Custom Elements](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements). It provides a set of react hooks to establish communication through custom element container, so it is possible to pass data IN via custom element attributes and IN/OUT via events.
 
+[Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components)
+[Using custom elements](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements)
+[3 Approaches to Integrate React with Custom Elements](https://css-tricks.com/3-approaches-to-integrate-react-with-custom-elements/)
+[Web Components in React](https://reactjs.org/docs/web-components.html)
+
 > Note: This does not isolate environments of running applications, all sub-applications running on one page will have access to same globals and it is possible for one application to interfere with others.
 
 ## Installation

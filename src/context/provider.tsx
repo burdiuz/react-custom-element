@@ -6,6 +6,7 @@ import {
   CustomElementContext,
   LifecycleCallback,
 } from "./context";
+import { useInstanceMethods } from "./methods";
 
 export type ProviderInitCallbackParams = {
   lifecycleCallbacks: CallbackMap<LifecycleCallback>;
@@ -36,6 +37,12 @@ export const CustomElementProvider: FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const {
+    get: getContainerCustomMethod,
+    has: hasContainerCustomMethod,
+    set: setContainerCustomMethod,
+  } = useInstanceMethods(container);
+
   const value = useMemo(
     () => ({
       container,
@@ -45,6 +52,9 @@ export const CustomElementProvider: FC<{
       attributeCallbacks,
       addAttributeCallback,
       removeAttributeCallback,
+      getContainerCustomMethod,
+      hasContainerCustomMethod,
+      setContainerCustomMethod,
     }),
     [
       container,
@@ -54,6 +64,9 @@ export const CustomElementProvider: FC<{
       attributeCallbacks,
       addAttributeCallback,
       removeAttributeCallback,
+      getContainerCustomMethod,
+      hasContainerCustomMethod,
+      setContainerCustomMethod,
     ]
   );
 

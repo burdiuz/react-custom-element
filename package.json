@@ -1,7 +1,7 @@
 {
   "name": "@actualwave/react-custom-element",
   "description": "An approach to microfrontends via custom elements and module isolation",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "types": "./index.d.ts",
   "main": "./cjs/index.js",
