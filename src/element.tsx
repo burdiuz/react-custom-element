@@ -23,7 +23,7 @@ export const UNMOUNT_EVENT = "appunmount";
 export const createRenderFn = (RootComponent: ComponentType) => () =>
   <RootComponent />;
 
-export const defaultRenderer = (
+export const rendererWithStrictMode = (
   renderFn: () => ReactNode,
   { container, onMount, onUnmount }: RendererParams
 ) => {
@@ -40,7 +40,28 @@ export const defaultRenderer = (
     </StrictMode>
   );
 
-  // <CustomElementConsumer>{() => renderFn()}</CustomElementConsumer>
+  return reactRoot;
+};
+
+export const defaultRenderer = (
+  renderFn: () => ReactNode,
+  { container, onMount, onUnmount }: RendererParams
+) => {
+  const reactRoot = createRoot(container.shadowRoot || container);
+  reactRoot.render(
+    /**
+     * Remove StrictMode in default renderer because it double-mounts
+     * components which does dispatch mount/unmount events twice.
+     * @see https://github.com/reactwg/react-18/discussions/19
+     */
+    <CustomElementProvider
+      container={container}
+      onMount={onMount}
+      onUnmount={onUnmount}
+    >
+      {renderFn()}
+    </CustomElementProvider>
+  );
 
   return reactRoot;
 };
