@@ -8,6 +8,7 @@ import React, {
   JSXElementConstructor,
   AllHTMLAttributes,
 } from "react";
+import { CustomHTMLElement } from "./element";
 
 const isEventName = (name: string) => /^on[A-Z]/.test(name);
 
@@ -49,10 +50,10 @@ const CustomElementShimInner = (
   }: {
     name: string | JSXElementConstructor<any>;
   } & (AllHTMLAttributes<HTMLElement> | Record<string, unknown>),
-  outputRef: Ref<HTMLElement | null>
+  outputRef: Ref<CustomHTMLElement | null>
 ) => {
   const events = useRef<ListenersHashMap>({});
-  const element = useRef<HTMLElement>(null);
+  const element = useRef<CustomHTMLElement>(null);
 
   const [eventProps, props] = filterEventProps(shimProps);
 
@@ -62,6 +63,7 @@ const CustomElementShimInner = (
    * This effect does not have dependencies and runs on every render.
    * It checks event handlers and updates listeners accordingly.
    * Latest event listeners are stored in "events" ref.
+   * I've put this code into a hook just to have a block of code.
    */
   useEffect(() => {
     const prevEvents: ListenersHashMap = events.current;
@@ -70,9 +72,10 @@ const CustomElementShimInner = (
     Object.keys(eventProps).forEach((name) => {
       // if listener was not registered before, create new and add to element
       if (!prevEvents[name]) {
-        const handler = (event: Event) => {
-          handler.callback(event);
+        const handler = function (this: unknown, event: Event) {
+          handler.callback.call(this, event);
         };
+
         handler.callback = eventProps[name];
         newEvents[name] = handler;
 

@@ -17,6 +17,9 @@ type RendererParams = {
   onUnmount?: ProviderInitCallback;
 };
 
+export const MOUNT_EVENT = "appmount";
+export const UNMOUNT_EVENT = "appunmount";
+
 export const createRenderFn = (RootComponent: ComponentType) => () =>
   <RootComponent />;
 
@@ -65,6 +68,18 @@ export type CreateCustomElementClassParams = {
   onUnmount?: ProviderInitCallback;
 };
 
+/**
+ * @fires CustomHTMLElement#approotmount
+ * @fires CustomHTMLElement#approotunmount
+ */
+class CustomHTMLElementClass extends HTMLElement {
+  public reactRoot?: Root;
+  public onAppmount?: (instance: CustomHTMLElementClass) => void;
+  public onAppunmount?: (instance: CustomHTMLElementClass) => void;
+}
+
+export type CustomHTMLElement = CustomHTMLElementClass;
+
 export const createCustomElementClass = ({
   render,
   renderer = defaultRenderer,
@@ -78,13 +93,15 @@ export const createCustomElementClass = ({
   onAttributeChanged,
   onMount,
   onUnmount,
-}: CreateCustomElementClassParams): typeof HTMLElement =>
+}: CreateCustomElementClassParams): typeof CustomHTMLElementClass =>
   class CustomElement extends BaseClass {
     static get observedAttributes() {
       return attributes;
     }
 
     public reactRoot?: Root;
+    public onAppmount?: (instance: CustomHTMLElementClass) => void;
+    public onAppunmount?: (instance: CustomHTMLElementClass) => void;
     public lifecycleCallbacks: CallbackMap<LifecycleCallback> = new Map();
     public attributeCallbacks: CallbackMap<AttributeCallback> = new Map();
 
@@ -104,17 +121,25 @@ export const createCustomElementClass = ({
           this.attributeCallbacks = params.attributeCallbacks;
 
           onMount?.(params);
+          this.dispatchEvent(new Event(MOUNT_EVENT));
+          this.onAppmount?.(this);
         },
-        onUnmount,
+        onUnmount: (params) => {
+          onUnmount?.(params);
+          this.dispatchEvent(new Event(UNMOUNT_EVENT));
+          this.onAppunmount?.(this);
+        },
       });
 
       onConnected?.(this);
       callByName(this.lifecycleCallbacks, CallbackNames.CONNECTED, [this]);
     }
+
     disconnectedCallback() {
       onDisconnected?.(this);
       callByName(this.lifecycleCallbacks, CallbackNames.DISCONNECTED, [this]);
     }
+
     adoptedCallback() {
       onAdopted?.(this);
       callByName(this.lifecycleCallbacks, CallbackNames.ADOPTED, [this]);

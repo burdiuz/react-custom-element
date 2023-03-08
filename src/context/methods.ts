@@ -40,6 +40,7 @@ export const useInstanceMethods = (instance: any) => {
         return method?.[methodImplProp]?.apply(this, args);
       };
 
+      method[methodImplProp] = impl;
       instance[name] = method;
       return method;
     },
@@ -49,9 +50,18 @@ export const useInstanceMethods = (instance: any) => {
   return { has, get, set };
 };
 
-export const useSetContainerCustomMethod = (name: string, methodFn: MethodImpl) => {
+export const useSetContainerCustomMethod = (
+  name: string,
+  methodFn: MethodImpl
+) => {
   const { setContainerCustomMethod } = useCustomElement();
 
+  /**
+   * This should be called before onMount events because custom element 
+   * provider is a parent component to any component where this can be used.
+   * Provider runs onMount un useEffect hook and useEffect hooks run first
+   * in child components.
+   */
   useEffect(() => {
     setContainerCustomMethod(name, methodFn);
   }, [name, methodFn, setContainerCustomMethod]);
