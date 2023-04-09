@@ -3,6 +3,7 @@ import {
   CreateCustomElementClassParams,
 } from "./element";
 export * from "./shim";
+export * from "./loader";
 export * from "./context";
 
 export const defineCustomElement = ({

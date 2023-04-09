@@ -11,7 +11,7 @@ import {
   ProviderInitCallbackParams,
 } from "./context";
 
-type RendererParams = {
+type ContainerRendererParams = {
   container: HTMLElement;
   onMount?: ProviderInitCallback;
   onUnmount?: ProviderInitCallback;
@@ -23,9 +23,32 @@ export const UNMOUNT_EVENT = "appunmount";
 export const createRenderFn = (RootComponent: ComponentType) => () =>
   <RootComponent />;
 
-export const rendererWithStrictMode = (
+/**
+ * Remove StrictMode in this renderer because it double-mounts
+ * components which does dispatch mount/unmount events twice.
+ * @see https://github.com/reactwg/react-18/discussions/19
+ */
+export const containerRendererWithoutStrictMode = (
   renderFn: () => ReactNode,
-  { container, onMount, onUnmount }: RendererParams
+  { container, onMount, onUnmount }: ContainerRendererParams
+) => {
+  const reactRoot = createRoot(container.shadowRoot || container);
+  reactRoot.render(
+    <CustomElementProvider
+      container={container}
+      onMount={onMount}
+      onUnmount={onUnmount}
+    >
+      {renderFn()}
+    </CustomElementProvider>
+  );
+
+  return reactRoot;
+};
+
+export const defaultContainerRenderer = (
+  renderFn: () => ReactNode,
+  { container, onMount, onUnmount }: ContainerRendererParams
 ) => {
   const reactRoot = createRoot(container.shadowRoot || container);
   reactRoot.render(
@@ -43,29 +66,6 @@ export const rendererWithStrictMode = (
   return reactRoot;
 };
 
-export const defaultRenderer = (
-  renderFn: () => ReactNode,
-  { container, onMount, onUnmount }: RendererParams
-) => {
-  const reactRoot = createRoot(container.shadowRoot || container);
-  reactRoot.render(
-    /**
-     * Remove StrictMode in default renderer because it double-mounts
-     * components which does dispatch mount/unmount events twice.
-     * @see https://github.com/reactwg/react-18/discussions/19
-     */
-    <CustomElementProvider
-      container={container}
-      onMount={onMount}
-      onUnmount={onUnmount}
-    >
-      {renderFn()}
-    </CustomElementProvider>
-  );
-
-  return reactRoot;
-};
-
 function callByName<T extends Function, K extends Array<unknown>>(
   map: CallbackMap<T>,
   name: string,
@@ -74,12 +74,36 @@ function callByName<T extends Function, K extends Array<unknown>>(
   map?.get(name)?.forEach((callback) => callback(...args));
 }
 
+export interface BaseHTMLElement extends HTMLElement {
+  connectedCallback?(): void;
+  disconnectedCallback?(): void;
+  adoptedCallback?(): void;
+  attributeChangedCallback?(
+    name: string,
+    oldValue: string | undefined,
+    newValue: string | undefined
+  ): void;
+}
+
+/**
+ * @fires CustomHTMLElement#approotmount
+ * @fires CustomHTMLElement#approotunmount
+ */
+export interface CustomHTMLElement extends HTMLElement {
+  reactRoot?: Root;
+  onAppmount?: (instance: CustomHTMLElement) => void;
+  onAppunmount?: (instance: CustomHTMLElement) => void;
+}
+
 export type CreateCustomElementClassParams = {
   render: () => ReactNode;
-  renderer?: (render: () => ReactNode, params: RendererParams) => Root;
+  renderContainer?: (
+    render: () => ReactNode,
+    params: ContainerRendererParams
+  ) => Root;
   shadowDomMode?: ShadowRootMode;
   attributes?: string[];
-  baseClass?: typeof HTMLElement;
+  baseClass?: new () => BaseHTMLElement;
   onCreated?: (element: HTMLElement) => void;
   onConnected?: (element: HTMLElement) => void;
   onDisconnected?: (element: HTMLElement) => void;
@@ -89,21 +113,9 @@ export type CreateCustomElementClassParams = {
   onUnmount?: ProviderInitCallback;
 };
 
-/**
- * @fires CustomHTMLElement#approotmount
- * @fires CustomHTMLElement#approotunmount
- */
-class CustomHTMLElementClass extends HTMLElement {
-  public reactRoot?: Root;
-  public onAppmount?: (instance: CustomHTMLElementClass) => void;
-  public onAppunmount?: (instance: CustomHTMLElementClass) => void;
-}
-
-export type CustomHTMLElement = CustomHTMLElementClass;
-
 export const createCustomElementClass = ({
   render,
-  renderer = defaultRenderer,
+  renderContainer = defaultContainerRenderer,
   shadowDomMode = "open",
   attributes = [],
   baseClass: BaseClass = HTMLElement,
@@ -114,15 +126,15 @@ export const createCustomElementClass = ({
   onAttributeChanged,
   onMount,
   onUnmount,
-}: CreateCustomElementClassParams): typeof CustomHTMLElementClass =>
+}: CreateCustomElementClassParams): new () => CustomHTMLElement =>
   class CustomElement extends BaseClass {
     static get observedAttributes() {
       return attributes;
     }
 
     public reactRoot?: Root;
-    public onAppmount?: (instance: CustomHTMLElementClass) => void;
-    public onAppunmount?: (instance: CustomHTMLElementClass) => void;
+    public onAppmount?: (instance: CustomHTMLElement) => void;
+    public onAppunmount?: (instance: CustomHTMLElement) => void;
     public lifecycleCallbacks: CallbackMap<LifecycleCallback> = new Map();
     public attributeCallbacks: CallbackMap<AttributeCallback> = new Map();
 
@@ -133,7 +145,8 @@ export const createCustomElementClass = ({
     }
 
     connectedCallback() {
-      this.reactRoot = renderer(render, {
+      super.connectedCallback?.();
+      this.reactRoot = renderContainer(render, {
         container: this,
         onMount: (params: ProviderInitCallbackParams) => {
           // Object.assign(this, params);
@@ -157,11 +170,13 @@ export const createCustomElementClass = ({
     }
 
     disconnectedCallback() {
+      super.disconnectedCallback?.();
       onDisconnected?.(this);
       callByName(this.lifecycleCallbacks, CallbackNames.DISCONNECTED, [this]);
     }
 
     adoptedCallback() {
+      super.adoptedCallback?.();
       onAdopted?.(this);
       callByName(this.lifecycleCallbacks, CallbackNames.ADOPTED, [this]);
     }
@@ -171,6 +186,8 @@ export const createCustomElementClass = ({
       oldValue: string | undefined,
       newValue: string | undefined
     ) {
+      super.attributeChangedCallback?.(name, oldValue, newValue);
+
       onAttributeChanged?.(this, name, oldValue, newValue);
       callByName(this.lifecycleCallbacks, CallbackNames.ATTRIBUTE_CHANGED, [
         this,

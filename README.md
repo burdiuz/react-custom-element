@@ -1,5 +1,7 @@
 # @actualwave/react-custom-element
 
+- TODO lookup for possibility to add renderer with portal for easier develoment and testing, probably using slot to insert components but need to deal with context propagation
+
 Adds support for independent modules wrapped in [HTML Custom Elements](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements). It provides a set of react hooks to establish communication through custom element container, so it is possible to pass data IN via custom element attributes and IN/OUT via events.
 
 [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components)
@@ -35,6 +37,7 @@ const MyComponent = () => {
       <h1>Hello World!</h1>
     </div>
   );
+}
 ```
 
 Instead of bootstrapping it via ReactDOM.render(), we register it as a custom element.
@@ -106,7 +109,7 @@ When custom HTML element is constructed, it will render `MyComponent` component 
 
 ## Communication
 
-Since modules integrated with custom elements are independent sub-applications, there are no way to communicate with them traditional React ways -- props or context. But you can communicate with sub-application by passing attributes or dispatching events.
+Since modules integrated with custom elements are independent sub-applications, there are no way to communicate with them traditional React ways -- props or context. But you can communicate with sub-application by passing attributes, exposing methods or dispatching events.
 
 ### Attributes
 
@@ -194,6 +197,49 @@ function App() {
 
 export default App;
 ```
+
+This package also provides a way to read/update multiple attributes at once on a container HTML element
+
+```jsx
+export const MyComponent = () => {
+  const [values] = useContainerAttributes([
+    "data-attr1",
+    "data-attr2",
+    "data-attr3",
+  ]);
+
+  return <div>{JSON.stringify(values)}</div>;
+};
+```
+
+### Methods
+
+There are might be a case when you would want to expose custom methods on container element so they will be callable from outside. This can be done with `useSetContainerCustomMethod()` hook.
+
+```jsx
+export const MyComponent = () => {
+  const [value, setValue] = useState(0);
+
+  useSetContainerCustomMethod("increment", () => setValue(value + 1));
+  // useSetContainerCustomMethod("increment", () => setValue((val) => val++));
+
+  return <div>Value: {value}</div>;
+};
+
+createCustomElement({
+  name: "my-component",
+  render: () => <MyComponent />,
+});
+```
+When added to HTML tree, `my-component` tag will expose method `increment()` and you could call it like this
+```js
+document.querySelector('my-component').increment();
+// or
+document.getElementsByTagName('my-component')[0].increment();
+// or using any other way when you can get a reference of HTML element
+```
+> There are no need to register attribute for such method via `createCustomElement()`.
+
 
 ### Events
 
